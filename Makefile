@@ -9,14 +9,24 @@ cnf ?= config.env
 include $(cnf)
 export $(shell sed 's/=.*//' $(cnf))
 
-datetime := $(shell /bin/date "+%Y%m%d%H%M")
+DATETIME := $(shell /bin/date "+%Y%m%d%H%M")
+# get the latest commit hash in the short form
+COMMIT_HASH := $(shell git rev-parse --short HEAD)
+COMMIT_DATETIME := $(shell git log -1 --format=%cd --date=format:"%Y%m%d%H%M")
+ifneq ($(shell git status --porcelain),)
+    # add the date/time and '-dirty' if the tree is dirty
+	COMMIT_HASH := $(COMMIT_HASH)-$(DATETIME)-dirty
+else
+	# add the commit date/time if the tree is clean
+	COMMIT_HASH := $(COMMIT_HASH)-$(COMMIT_DATETIME)
+endif
 
 # HELP
 # This will output the help for each task
 # thanks to https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 .PHONY: help build build-nc build-kaniko run run-kaniko up stop release \
-	publish publish-dev publish-latest publish-version publish-short-hash tag \
-	tag-latest tag-version tag-short-hash tag-datetime docker-clean 
+	publish publish-latest publish-version publish-short-hash \
+	tag tag-latest tag-version tag-short-hash docker-clean 
 
 help: ## This help.
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -67,15 +77,10 @@ up: build run ## Run container on port configured in `config.env` (Alias to run)
 stop: ## Stop and remove a running container
 	docker stop $(APP_NAME); docker rm $(APP_NAME)
 
-release: build-nc publish ## Make a release by building and publishing the `{TAG}` and `latest` tagged containers to ECR
+release: build-nc publish ## Make a release by building and publishing tagged containers to ECR
 
 # Docker publish
-# publish: publish-latest publish-version publish-short-hash ## Publish the `{TAG}` and `latest` tagged containers to ECR
-publish: tag-latest tag-version tag-datetime tag-short-hash ## Publish the `{TAG}` ans `latest` tagged containers to ECR
-	@echo 'publish all tags to $(IMAGE_REPO)'
-	docker push -a $(IMAGE_REPO)/$(APP_NAME)
-
-publish-dev: tag-latest tag-version tag-datetime ## Publish without adding the short-hash tag (for development before release)
+publish: publish-latest publish-version publish-short-hash ## Publish tags
 	@echo 'publish all tags to $(IMAGE_REPO)'
 	docker push -a $(IMAGE_REPO)/$(APP_NAME)
 
@@ -88,11 +93,11 @@ publish-version: tag-version ## Publish the `{TAG}` tagged container to ECR
 	docker push $(IMAGE_REPO)/$(APP_NAME):$(TAG)
 
 publish-short-hash: tag-short-hash ## Publish the short-hash tagged container to ECR
-	@echo 'publish $(shell git log -1 --pretty=%h) to $(IMAGE_REPO)'
-	docker push $(IMAGE_REPO)/$(APP_NAME):$(shell git log -1 --pretty=%h)
+	@echo 'publish $(COMMIT_HASH) to $(IMAGE_REPO)'
+	docker push $(IMAGE_REPO)/$(APP_NAME):$(COMMIT_HASH)
 
 # Docker tagging
-tag: tag-latest tag-version tag-short-hash tag-datetime ## Generate container tags for the `{version}` and `latest` tags
+tag: tag-latest tag-version tag-short-hash ## Generate container tags
 
 tag-latest: ## Generate container `latest` tag
 	@echo 'create tag latest'
@@ -102,13 +107,9 @@ tag-version: ## Generate container `{TAG}` tag
 	@echo 'create tag $(TAG)'
 	docker tag $(APP_NAME) $(IMAGE_REPO)/$(APP_NAME):$(TAG)
 
-tag-short-hash: ## Generate container short-hash tag created from last commit
-	@echo 'create tag $(shell git log -1 --pretty=%h)'
-	docker tag $(APP_NAME) $(IMAGE_REPO)/$(APP_NAME):$(shell git log -1 --pretty=%h)
-
-tag-datetime: ## Generate container datetime tag created from current date and time
-	@echo 'create tag $(datetime)'
-	docker tag $(APP_NAME) $(IMAGE_REPO)/$(APP_NAME):$(datetime)
+tag-short-hash: ## Generate container short-hash tag created from last commit or current datetime if tree is dirty
+	@echo 'create tag $(COMMIT_HASH)'
+	docker tag $(APP_NAME) $(IMAGE_REPO)/$(APP_NAME):$(COMMIT_HASH)
 
 docker-clean: ## Prune unused images, containers, and networks from the local Docker system.
 	docker system prune -f

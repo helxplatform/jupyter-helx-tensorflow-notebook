@@ -15,7 +15,9 @@ RUN pip install \
        mlxtend \
        nibabel \
        torch && \
-    fix-permissions "${CONDA_DIR}"
+    conda config --set restore_free_channel true && \
+    conda install -y -q numba cudatoolkit && \
+    fix-permissions "${CONDA_DIR}" /home
 
 WORKDIR /
 USER $NB_USER

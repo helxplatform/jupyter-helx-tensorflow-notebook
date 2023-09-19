@@ -1,4 +1,4 @@
-ARG BASE_IMAGE_TAG=0.0.2
+ARG BASE_IMAGE_TAG=develop-cuda-202309182143
 FROM containers.renci.org/helxplatform/jupyter/helx-notebook:$BASE_IMAGE_TAG
 
 USER root

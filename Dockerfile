@@ -16,6 +16,8 @@ RUN conda config --set restore_free_channel true && \
        tensorflow \
        torch && \
     fix-permissions "${CONDA_DIR}" /home
+# Needed for weird permissions in azure
+ENV JUPYTER_ALLOW_INSECURE_WRITES=true
 
 WORKDIR /
 USER $NB_USER

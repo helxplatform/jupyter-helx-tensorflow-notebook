@@ -17,5 +17,15 @@ RUN conda config --set restore_free_channel true && \
        torch && \
     fix-permissions "${CONDA_DIR}" /home
 
+# Install cmake required for Torch installation
+RUN apt-get update \ 
+    && apt-get -y install cmake libreadline-dev
+# Install Torch
+RUN git clone https://github.com/torch/distro.git ./opt/torch-lua --recursive \
+    && cd /opt/torch-lua \
+    && ./install.sh && \
+    fix-permissions /opt/torch-lua /home
+RUN echo "source /opt/torch-lua/install/bin/torch-activate" >> /etc/skel/.bashrc
+
 WORKDIR /
 USER $NB_USER

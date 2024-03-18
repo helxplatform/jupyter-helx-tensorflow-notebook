@@ -23,8 +23,8 @@ RUN apt-get update \
 # Install Torch
 RUN git clone https://github.com/torch/distro.git ./opt/torch-lua --recursive \
     && cd /opt/torch-lua \
-    && ./install.sh && \
-    fix-permissions /opt/torch-lua /home
+    && TORCH_LUA_VERSION=LUA52 ./install.sh \
+    && fix-permissions /opt/torch-lua /home
 RUN echo "source /opt/torch-lua/install/bin/torch-activate" >> /etc/skel/.bashrc
 
 WORKDIR /

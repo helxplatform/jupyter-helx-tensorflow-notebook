@@ -7,12 +7,16 @@ USER root
 # Fix: https://github.com/koalaman/shellcheck/wiki/SC3014
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-RUN conda config --set restore_free_channel true && \
+RUN apt-get install -y graphviz libgraphviz-dev && \
+    conda config --set restore_free_channel true && \
     conda install -y -q numba cudatoolkit && \
     pip install --no-cache-dir nvidia-cudnn-cu11 && \
     pip install --no-cache-dir \
+       graphviz \
        mlxtend \
        nibabel \
+       pydot \
+       pygraphviz \
        tensorflow \
        torch && \
     fix-permissions "${CONDA_DIR}" /home

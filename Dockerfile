@@ -1,4 +1,4 @@
-ARG BASE_IMAGE_TAG=v0.1.0
+ARG BASE_IMAGE_TAG=v0.1.1
 FROM containers.renci.org/helxplatform/jupyter/helx-notebook:$BASE_IMAGE_TAG
 
 USER root

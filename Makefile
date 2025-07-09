@@ -35,6 +35,7 @@ help: ## This help.
 
 build: ## Build the image.
 	    docker build --pull \
+		--platform=linux/amd64 \
 		--build-arg BASE_IMAGE=${BASE_IMAGE} \
 		--build-arg BASE_IMAGE_TAG=${BASE_IMAGE_TAG} \
 		-t ${APP_NAME} .
